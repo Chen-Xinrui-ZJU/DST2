@@ -13,21 +13,36 @@ public class AuthenticationFilter implements Filter {
     public static final String USERNAME = "username";
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    public void init(FilterConfig filterConfig) throws ServletException {
+        // 必须有。可以先留空。
+        // 如果你想打印调试：
+        // System.out.println("AuthenticationFilter init");
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpSession session = httpServletRequest.getSession();
         Object username = session.getAttribute(USERNAME);
+
         if (username != null) {
             Object roleViewDosingGuideline = session.getAttribute(ROLE_VIEW_DOSING_GUIDELINE);
             if (roleViewDosingGuideline != null && ((Integer) roleViewDosingGuideline) == 1) {
                 chain.doFilter(request, response);
-            } else {
-                response.setContentType("text/html");
-                response.getWriter().write("You are not allowed to view dosing guideline, please <a href='signin'>sign in</a> first.");
+                return;
             }
-        } else {
-            response.setContentType("text/html");
-            response.getWriter().write("You are not allowed to view dosing guideline, please <a href='signin'>sign in</a> first.");
         }
+
+        response.setContentType("text/html;charset=UTF-8");
+        response.getWriter().write(
+                "You are not allowed to view dosing guideline, please <a href='signin'>sign in</a> first."
+        );
+    }
+
+    @Override
+    public void destroy() {
+        // 必须有。可以先留空。
     }
 }
