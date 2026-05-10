@@ -15,12 +15,12 @@ public class FavoriteDao extends BaseDao {
 
     private static final Logger log = LoggerFactory.getLogger(FavoriteDao.class);
 
-    public void addFavorite(int userId, String resourceType, String resourceId) {
+    public void addFavorite(String userId, String resourceType, String resourceId) {
         DBUtils.execSQL(connection -> {
             try {
                 String sql = "INSERT IGNORE INTO favorites (user_id, resource_type, resource_id) VALUES (?, ?, ?)";
                 PreparedStatement ps = connection.prepareStatement(sql);
-                ps.setInt(1, userId);
+                ps.setString(1, userId);
                 ps.setString(2, resourceType);
                 ps.setString(3, resourceId);
                 ps.executeUpdate();
@@ -30,12 +30,12 @@ public class FavoriteDao extends BaseDao {
         });
     }
 
-    public void removeFavorite(int userId, String resourceType, String resourceId) {
+    public void removeFavorite(String userId, String resourceType, String resourceId) {
         DBUtils.execSQL(connection -> {
             try {
                 String sql = "DELETE FROM favorites WHERE user_id = ? AND resource_type = ? AND resource_id = ?";
                 PreparedStatement ps = connection.prepareStatement(sql);
-                ps.setInt(1, userId);
+                ps.setString(1, userId);
                 ps.setString(2, resourceType);
                 ps.setString(3, resourceId);
                 ps.executeUpdate();
@@ -45,14 +45,14 @@ public class FavoriteDao extends BaseDao {
         });
     }
 
-    public Set<String> findFavoriteResourceIds(int userId, String resourceType) {
+    public Set<String> findFavoriteResourceIds(String userId, String resourceType) {
         Set<String> ids = new HashSet<String>();
 
         DBUtils.execSQL(connection -> {
             try {
                 String sql = "SELECT resource_id FROM favorites WHERE user_id = ? AND resource_type = ?";
                 PreparedStatement ps = connection.prepareStatement(sql);
-                ps.setInt(1, userId);
+                ps.setString(1, userId);
                 ps.setString(2, resourceType);
                 ResultSet rs = ps.executeQuery();
 
@@ -67,7 +67,7 @@ public class FavoriteDao extends BaseDao {
         return ids;
     }
 
-    public List<Drug> findFavoriteDrugsByUserId(int userId) {
+    public List<Drug> findFavoriteDrugsByUserId(String userId) {
         List<Drug> drugs = new ArrayList<Drug>();
 
         DBUtils.execSQL(connection -> {
@@ -80,7 +80,7 @@ public class FavoriteDao extends BaseDao {
                                 "ORDER BY f.created_at DESC";
 
                 PreparedStatement ps = connection.prepareStatement(sql);
-                ps.setInt(1, userId);
+                ps.setString(1, userId);
                 ResultSet rs = ps.executeQuery();
 
                 while (rs.next()) {

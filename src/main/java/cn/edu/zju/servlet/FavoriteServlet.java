@@ -12,7 +12,7 @@ import java.util.List;
 @WebServlet(name = "FavoriteServlet", urlPatterns = {"/favorites", "/favorites/add", "/favorites/remove"})
 public class FavoriteServlet extends HttpServlet {
 
-    private static final int TEST_USER_ID = 1;
+    private static final String TEST_USER_ID = "zju";
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
