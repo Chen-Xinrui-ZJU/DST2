@@ -101,4 +101,67 @@ public class DrugLabelDao extends BaseDao {
         });
         return drugLabels;
     }
+
+    public List<DrugLabel> findByKeyword(String keyword) {
+        List<DrugLabel> drugLabels = new ArrayList<>();
+
+        DBUtils.execSQL(connection -> {
+            try {
+                String sql =
+                        "select id, name, obj_cls, alternate_drug_available, dosing_information, " +
+                                "prescribing_markdown, source, text_markdown, summary_markdown, raw, drug_id, " +
+                                "efficacy_summary, response_warning, alternative_drug " +
+                                "from drug_label " +
+                                "where id like ? " +
+                                "or name like ? " +
+                                "or obj_cls like ? " +
+                                "or cast(alternate_drug_available as char) like ? " +
+                                "or cast(dosing_information as char) like ? " +
+                                "or prescribing_markdown like ? " +
+                                "or source like ? " +
+                                "or text_markdown like ? " +
+                                "or summary_markdown like ? " +
+                                "or raw like ? " +
+                                "or drug_id like ? " +
+                                "or efficacy_summary like ? " +
+                                "or response_warning like ? " +
+                                "or alternative_drug like ?";
+
+                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+                String likeKeyword = "%" + keyword + "%";
+                for (int i = 1; i <= 14; i++) {
+                    preparedStatement.setString(i, likeKeyword);
+                }
+
+                ResultSet resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) {
+                    DrugLabel drugLabel = new DrugLabel(
+                            resultSet.getString("id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("obj_cls"),
+                            resultSet.getBoolean("alternate_drug_available"),
+                            resultSet.getBoolean("dosing_information"),
+                            resultSet.getString("prescribing_markdown"),
+                            resultSet.getString("source"),
+                            resultSet.getString("text_markdown"),
+                            resultSet.getString("summary_markdown"),
+                            resultSet.getString("raw"),
+                            resultSet.getString("drug_id"),
+                            resultSet.getString("efficacy_summary"),
+                            resultSet.getString("response_warning"),
+                            resultSet.getString("alternative_drug")
+                    );
+
+                    drugLabels.add(drugLabel);
+                }
+
+            } catch (SQLException e) {
+                log.info("", e);
+            }
+        });
+
+        return drugLabels;
+    }
 }

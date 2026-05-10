@@ -54,6 +54,23 @@
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h2>Drug Labels</h2>
+                <form method="get" action="${pageContext.request.contextPath}/drugLabels" style="margin-bottom: 15px;">
+                    <input
+                            type="text"
+                            name="keyword"
+                            value="${keyword}"
+                            placeholder="Search by label ID, source, summary, efficacy, warning, alternative drug or drug ID"
+                            style="width: 520px; padding: 6px;"
+                    />
+                    <button type="submit">Search</button>
+                    <a href="${pageContext.request.contextPath}/drugLabels">Reset</a>
+                </form>
+
+                <c:if test="${not empty keyword}">
+                    <p>
+                        Search result for: <strong>${keyword}</strong>
+                    </p>
+                </c:if>
             </div>
             <div class="table-responsive">
                 <table class="table table-striped table-sm">
