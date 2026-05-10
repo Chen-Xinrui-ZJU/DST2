@@ -224,3 +224,12 @@ create table sample
     created_at datetime null,
     uploaded_by text null
 );
+
+CREATE TABLE IF NOT EXISTS favorites (
+                                         id INT AUTO_INCREMENT PRIMARY KEY,
+                                         user_id VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(50) NOT NULL,
+    resource_id VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_user_resource (user_id, resource_type, resource_id)
+    );

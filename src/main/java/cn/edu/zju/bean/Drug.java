@@ -59,4 +59,13 @@ public class Drug {
         ObjCls = objCls;
     }
 
+    private boolean favorited = false;
+
+    public boolean isFavorited() {
+        return favorited;
+    }
+
+    public void setFavorited(boolean favorited) {
+        this.favorited = favorited;
+    }
 }

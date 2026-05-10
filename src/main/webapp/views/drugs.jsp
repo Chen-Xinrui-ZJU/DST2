@@ -63,15 +63,37 @@
                         <th>Name</th>
                         <th>Drug Url</th>
                         <th>Biomarker</th>
+                        <th>Favorite</th>
                     </tr>
                     </thead>
                     <tbody>
                     <c:forEach items="${drugs}" var="item">
                         <tr>
                             <td>${item.id}</td>
+
                             <td>${item.name}</td>
+
                             <td>${item.drugUrl}</td>
+
                             <td>${item.biomarker}</td>
+
+                            <td>
+                                <button type="button"
+                                        class="btn btn-sm ${item.favorited ? 'btn-primary' : 'btn-outline-primary'} favorite-btn"
+                                        data-resource-type="drug"
+                                        data-resource-id="${item.id}"
+                                        data-favorited="${item.favorited}">
+                                    <c:choose>
+                                        <c:when test="${item.favorited}">
+                                            ✓ Favorited
+                                        </c:when>
+                                        <c:otherwise>
+                                            ☆ Favorite
+                                        </c:otherwise>
+                                    </c:choose>
+                                </button>
+                            </td>
+
                         </tr>
                     </c:forEach>
 
@@ -81,5 +103,50 @@
         </main>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var buttons = document.querySelectorAll(".favorite-btn");
+
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].addEventListener("click", function () {
+                var btn = this;
+                var resourceType = btn.getAttribute("data-resource-type");
+                var resourceId = btn.getAttribute("data-resource-id");
+                var isFavorited = btn.getAttribute("data-favorited") === "true";
+
+                var url = isFavorited
+                    ? "<%=request.getContextPath()%>/favorites/remove"
+                    : "<%=request.getContextPath()%>/favorites/add";
+
+                var params = "resourceType=" + encodeURIComponent(resourceType)
+                    + "&resourceId=" + encodeURIComponent(resourceId);
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: params
+                })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (data.success) {
+                            if (isFavorited) {
+                                btn.setAttribute("data-favorited", "false");
+                                btn.className = "btn btn-sm btn-outline-primary favorite-btn";
+                                btn.innerHTML = "☆ Favorite";
+                            } else {
+                                btn.setAttribute("data-favorited", "true");
+                                btn.className = "btn btn-sm btn-primary favorite-btn";
+                                btn.innerHTML = "✓ Favorited";
+                            }
+                        }
+                    });
+            });
+        }
+    });
+</script>
 </body>
 </html>

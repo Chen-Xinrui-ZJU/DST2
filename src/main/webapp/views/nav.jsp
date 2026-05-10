@@ -43,6 +43,12 @@
                     Dosing Guideline
                 </a>
             </li>
+            <li class="nav-item">
+                <a class='nav-link ${param.active == "favorites" ? "active" : ""}' href="<%=request.getContextPath()%>/favorites">
+                    <span data-feather="file-text"></span>
+                    Favorites
+                </a>
+            </li>
         </ul>
     </div>
 </nav>
