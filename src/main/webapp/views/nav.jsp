@@ -43,6 +43,13 @@
                     Samples
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class='nav-link ${param.active == "favorites" ? "active" : ""}' href="<%=request.getContextPath()%>/favorites">
+                    <span data-feather="star"></span>
+                    Favorites
+                </a>
+            </li>
         </ul>
 
         <!-- Precision Medicine Knowledge Base -->

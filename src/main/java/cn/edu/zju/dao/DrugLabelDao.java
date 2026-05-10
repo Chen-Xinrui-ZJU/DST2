@@ -41,9 +41,9 @@ public class DrugLabelDao extends BaseDao {
                 preparedStatement.setString(9, drugLabel.getSummaryMarkdown());
                 preparedStatement.setString(10, drugLabel.getRaw());
                 preparedStatement.setString(11, drugLabel.getDrugId());
-                preparedStatement.setString(12, drugLabel.getEfficacySummary());
-                preparedStatement.setString(13, drugLabel.getResponseWarning());
-                preparedStatement.setString(14, drugLabel.getAlternativeDrug());
+                preparedStatement.setString(12, normalize(drugLabel.getEfficacySummary()));
+                preparedStatement.setString(13, normalize(drugLabel.getResponseWarning()));
+                preparedStatement.setString(14, normalize(drugLabel.getAlternativeDrug()));
 
                 preparedStatement.execute();
             } catch (SQLException e) {
@@ -58,36 +58,18 @@ public class DrugLabelDao extends BaseDao {
                                        String alternativeDrug) {
         DBUtils.execSQL(connection -> {
             try {
-                List<String> setParts = new ArrayList<>();
-                List<String> values = new ArrayList<>();
+                PreparedStatement preparedStatement = connection.prepareStatement(
+                        "update drug_label " +
+                                "set efficacy_summary = ?, " +
+                                "response_warning = ?, " +
+                                "alternative_drug = ? " +
+                                "where id = ?"
+                );
 
-                if (!isBlank(efficacySummary)) {
-                    setParts.add("efficacy_summary = ?");
-                    values.add(efficacySummary);
-                }
-
-                if (!isBlank(responseWarning)) {
-                    setParts.add("response_warning = ?");
-                    values.add(responseWarning);
-                }
-
-                if (!isBlank(alternativeDrug)) {
-                    setParts.add("alternative_drug = ?");
-                    values.add(alternativeDrug);
-                }
-
-                if (setParts.isEmpty()) {
-                    return;
-                }
-
-                String sql = "update drug_label set " + String.join(", ", setParts) + " where id = ?";
-                PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-                int index = 1;
-                for (String value : values) {
-                    preparedStatement.setString(index++, value);
-                }
-                preparedStatement.setString(index, id);
+                preparedStatement.setString(1, normalize(efficacySummary));
+                preparedStatement.setString(2, normalize(responseWarning));
+                preparedStatement.setString(3, normalize(alternativeDrug));
+                preparedStatement.setString(4, id);
 
                 preparedStatement.executeUpdate();
 
@@ -103,10 +85,7 @@ public class DrugLabelDao extends BaseDao {
         DBUtils.execSQL(connection -> {
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(
-                        "select id, name, obj_cls, alternate_drug_available, dosing_information, " +
-                                "prescribing_markdown, source, text_markdown, summary_markdown, raw, drug_id, " +
-                                "efficacy_summary, response_warning, alternative_drug " +
-                                "from drug_label"
+                        getSelectSql() + " from drug_label"
                 );
 
                 ResultSet resultSet = preparedStatement.executeQuery();
@@ -125,35 +104,67 @@ public class DrugLabelDao extends BaseDao {
     }
 
     public List<DrugLabel> findByKeyword(String keyword) {
+        return findByKeywordWithFilter(keyword, "all");
+    }
+
+    public List<DrugLabel> findByKeywordWithFilter(String keyword, String filter) {
         List<DrugLabel> drugLabels = new ArrayList<>();
 
         DBUtils.execSQL(connection -> {
             try {
-                String sql =
-                        "select id, name, obj_cls, alternate_drug_available, dosing_information, " +
-                                "prescribing_markdown, source, text_markdown, summary_markdown, raw, drug_id, " +
-                                "efficacy_summary, response_warning, alternative_drug " +
-                                "from drug_label " +
-                                "where id like ? " +
-                                "or name like ? " +
-                                "or obj_cls like ? " +
-                                "or cast(alternate_drug_available as char) like ? " +
-                                "or cast(dosing_information as char) like ? " +
-                                "or prescribing_markdown like ? " +
-                                "or source like ? " +
-                                "or text_markdown like ? " +
-                                "or summary_markdown like ? " +
-                                "or raw like ? " +
-                                "or drug_id like ? " +
-                                "or efficacy_summary like ? " +
-                                "or response_warning like ? " +
-                                "or alternative_drug like ?";
+                boolean searchAll = filter == null || filter.trim().isEmpty() || "all".equals(filter);
 
-                PreparedStatement preparedStatement = connection.prepareStatement(sql);
+                String wherePart;
+
+                if ("id".equals(filter)) {
+                    wherePart = " where id like ?";
+                } else if ("name".equals(filter)) {
+                    wherePart = " where name like ?";
+                } else if ("source".equals(filter)) {
+                    wherePart = " where source like ?";
+                } else if ("drug_id".equals(filter)) {
+                    wherePart = " where drug_id like ?";
+                } else if ("dosing_information".equals(filter)) {
+                    wherePart = " where cast(dosing_information as char) like ?";
+                } else if ("summary_markdown".equals(filter)) {
+                    wherePart = " where summary_markdown like ?";
+                } else if ("efficacy_summary".equals(filter)) {
+                    wherePart = " where efficacy_summary like ?";
+                } else if ("response_warning".equals(filter)) {
+                    wherePart = " where response_warning like ?";
+                } else if ("alternative_drug".equals(filter)) {
+                    wherePart = " where alternative_drug like ?";
+                } else {
+                    searchAll = true;
+                    wherePart =
+                            " where id like ? " +
+                                    "or name like ? " +
+                                    "or obj_cls like ? " +
+                                    "or cast(alternate_drug_available as char) like ? " +
+                                    "or cast(dosing_information as char) like ? " +
+                                    "or prescribing_markdown like ? " +
+                                    "or source like ? " +
+                                    "or text_markdown like ? " +
+                                    "or summary_markdown like ? " +
+                                    "or raw like ? " +
+                                    "or drug_id like ? " +
+                                    "or efficacy_summary like ? " +
+                                    "or response_warning like ? " +
+                                    "or alternative_drug like ?";
+                }
+
+                PreparedStatement preparedStatement = connection.prepareStatement(
+                        getSelectSql() + " from drug_label " + wherePart
+                );
 
                 String likeKeyword = "%" + keyword + "%";
-                for (int i = 1; i <= 14; i++) {
-                    preparedStatement.setString(i, likeKeyword);
+
+                if (searchAll) {
+                    for (int i = 1; i <= 14; i++) {
+                        preparedStatement.setString(i, likeKeyword);
+                    }
+                } else {
+                    preparedStatement.setString(1, likeKeyword);
                 }
 
                 ResultSet resultSet = preparedStatement.executeQuery();
@@ -169,6 +180,12 @@ public class DrugLabelDao extends BaseDao {
         });
 
         return drugLabels;
+    }
+
+    private String getSelectSql() {
+        return "select id, name, obj_cls, alternate_drug_available, dosing_information, " +
+                "prescribing_markdown, source, text_markdown, summary_markdown, raw, drug_id, " +
+                "efficacy_summary, response_warning, alternative_drug";
     }
 
     private DrugLabel buildDrugLabel(ResultSet resultSet) throws SQLException {
@@ -205,7 +222,10 @@ public class DrugLabelDao extends BaseDao {
         );
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+    private static String normalize(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "";
+        }
+        return value.trim();
     }
 }

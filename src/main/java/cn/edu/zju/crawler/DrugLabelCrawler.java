@@ -70,10 +70,20 @@ public class DrugLabelCrawler extends BaseCrawler {
 
                 String summaryMarkdown = getMarkdownHtml(data.get("summaryMarkdown"));
                 String textMarkdown = getMarkdownHtml(data.get("textMarkdown"));
+                String prescribingMarkdown = getMarkdownHtml(data.get("prescribingMarkdown"));
 
                 String efficacySummary = extractEfficacySummary(summaryMarkdown, textMarkdown);
                 String responseWarning = extractResponseWarning(textMarkdown);
-                String alternativeDrug = extractAlternativeDrug(data);
+
+                // Old logic:
+                // Only when alternateDrugAvailable is true,
+                // search the label text for an alternative-drug-related sentence.
+                String alternativeDrug = extractAlternativeDrug(
+                        data,
+                        prescribingMarkdown,
+                        summaryMarkdown,
+                        textMarkdown
+                );
 
                 drugLabelDao.updateSupplementFields(
                         labelId,
@@ -93,6 +103,7 @@ public class DrugLabelCrawler extends BaseCrawler {
                     System.out.println("Efficacy Summary empty? " + isBlank(efficacySummary));
                     System.out.println("Response Warning empty? " + isBlank(responseWarning));
                     System.out.println("Alternative Drug empty? " + isBlank(alternativeDrug));
+                    System.out.println("Alternative Drug value: " + alternativeDrug);
                     System.out.println("========================================");
                     System.out.println();
                 }
@@ -181,14 +192,49 @@ public class DrugLabelCrawler extends BaseCrawler {
         return "";
     }
 
-    private static String extractAlternativeDrug(Map data) {
+    private static String extractAlternativeDrug(Map data,
+                                                 String prescribingMarkdown,
+                                                 String summaryMarkdown,
+                                                 String textMarkdown) {
         Object value = data.get("alternateDrugAvailable");
 
-        if (value != null && Boolean.TRUE.equals(value)) {
-            return "Alternative drug information is available for this PharmGKB label annotation.";
+        if (value == null || !Boolean.TRUE.equals(value)) {
+            return "";
+        }
+
+        String combinedText =
+                safeString(prescribingMarkdown) + " " +
+                        safeString(summaryMarkdown) + " " +
+                        safeString(textMarkdown);
+
+        String plainText = cleanHtml(combinedText);
+
+        if (isBlank(plainText)) {
+            return "";
+        }
+
+        String[] sentenceCandidates = plainText.split("(?<=[.!?])\\s+|\\n+|;");
+
+        for (String sentence : sentenceCandidates) {
+            String cleanedSentence = sentence.trim();
+            String lower = cleanedSentence.toLowerCase();
+
+            if (isAlternativeSentence(lower)) {
+                return cleanedSentence;
+            }
         }
 
         return "";
+    }
+
+    private static boolean isAlternativeSentence(String lowerSentence) {
+        return lowerSentence.contains("another")
+                || lowerSentence.contains("alternative")
+                || lowerSentence.contains("consider")
+                || lowerSentence.contains("avoid")
+                || lowerSentence.contains("switch")
+                || lowerSentence.contains("substitute")
+                || lowerSentence.contains("replacement");
     }
 
     private static String getMarkdownHtml(Object value) {
@@ -220,6 +266,34 @@ public class DrugLabelCrawler extends BaseCrawler {
         }
 
         return "";
+    }
+
+    private static String cleanHtml(String html) {
+        if (html == null) {
+            return "";
+        }
+
+        String text = html;
+
+        text = text.replaceAll("(?i)<br\\s*/?>", "\n");
+        text = text.replaceAll("(?i)</p>", "\n");
+        text = text.replaceAll("(?i)</blockquote>", "\n");
+        text = text.replaceAll("<[^>]+>", " ");
+
+        text = text.replace("&nbsp;", " ");
+        text = text.replace("&amp;", "&");
+        text = text.replace("&lt;", "<");
+        text = text.replace("&gt;", ">");
+        text = text.replace("&quot;", "\"");
+        text = text.replace("&#39;", "'");
+
+        text = text.replaceAll("\\s+", " ").trim();
+
+        return text;
+    }
+
+    private static String safeString(String value) {
+        return value == null ? "" : value;
     }
 
     private static boolean isBlank(String value) {

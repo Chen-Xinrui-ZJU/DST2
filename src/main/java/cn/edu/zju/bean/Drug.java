@@ -8,6 +8,8 @@ public class Drug {
     private String drugUrl;
     private String ObjCls;
 
+    private boolean favorited;
+
     public Drug() {
     }
 
@@ -16,7 +18,17 @@ public class Drug {
         this.name = name;
         this.biomarker = biomarker;
         this.drugUrl = drugUrl;
-        ObjCls = objCls;
+        this.ObjCls = objCls;
+        this.favorited = false;
+    }
+
+    public Drug(String id, String name, boolean biomarker, String drugUrl, String objCls, boolean favorited) {
+        this.id = id;
+        this.name = name;
+        this.biomarker = biomarker;
+        this.drugUrl = drugUrl;
+        this.ObjCls = objCls;
+        this.favorited = favorited;
     }
 
     public String getId() {
@@ -59,4 +71,11 @@ public class Drug {
         ObjCls = objCls;
     }
 
+    public boolean isFavorited() {
+        return favorited;
+    }
+
+    public void setFavorited(boolean favorited) {
+        this.favorited = favorited;
+    }
 }
