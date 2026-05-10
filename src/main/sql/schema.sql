@@ -207,6 +207,9 @@ create table drug_label
     summary_markdown varchar(1000) null,
     raw text null,
     drug_id varchar(100) null,
+    efficacy_summary text null,
+    response_warning text null,
+    alternative_drug text null,
     constraint drug_label_id_uindex
         unique (id)
 );

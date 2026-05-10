@@ -14,10 +14,43 @@ public class DrugLabel {
     private String raw;
     private String drugId;
 
+    private String efficacySummary;
+    private String responseWarning;
+    private String alternativeDrug;
+
     public DrugLabel() {
     }
 
-    public DrugLabel(String id, String name, String objCls, boolean alternateDrugAvailable, boolean dosingInformation, String prescribingMarkdown, String source, String textMarkdown, String summaryMarkdown, String raw, String drugId) {
+    public DrugLabel(String id,
+                     String name,
+                     String objCls,
+                     boolean alternateDrugAvailable,
+                     boolean dosingInformation,
+                     String prescribingMarkdown,
+                     String source,
+                     String textMarkdown,
+                     String summaryMarkdown,
+                     String raw,
+                     String drugId) {
+        this(id, name, objCls, alternateDrugAvailable, dosingInformation,
+                prescribingMarkdown, source, textMarkdown, summaryMarkdown,
+                raw, drugId, null, null, null);
+    }
+
+    public DrugLabel(String id,
+                     String name,
+                     String objCls,
+                     boolean alternateDrugAvailable,
+                     boolean dosingInformation,
+                     String prescribingMarkdown,
+                     String source,
+                     String textMarkdown,
+                     String summaryMarkdown,
+                     String raw,
+                     String drugId,
+                     String efficacySummary,
+                     String responseWarning,
+                     String alternativeDrug) {
         this.id = id;
         this.name = name;
         this.objCls = objCls;
@@ -29,22 +62,9 @@ public class DrugLabel {
         this.summaryMarkdown = summaryMarkdown;
         this.raw = raw;
         this.drugId = drugId;
-    }
-
-    public String getDrugId() {
-        return drugId;
-    }
-
-    public void setDrugId(String drugId) {
-        this.drugId = drugId;
-    }
-
-    public String getRaw() {
-        return raw;
-    }
-
-    public void setRaw(String raw) {
-        this.raw = raw;
+        this.efficacySummary = efficacySummary;
+        this.responseWarning = responseWarning;
+        this.alternativeDrug = alternativeDrug;
     }
 
     public String getId() {
@@ -117,5 +137,45 @@ public class DrugLabel {
 
     public void setSummaryMarkdown(String summaryMarkdown) {
         this.summaryMarkdown = summaryMarkdown;
+    }
+
+    public String getRaw() {
+        return raw;
+    }
+
+    public void setRaw(String raw) {
+        this.raw = raw;
+    }
+
+    public String getDrugId() {
+        return drugId;
+    }
+
+    public void setDrugId(String drugId) {
+        this.drugId = drugId;
+    }
+
+    public String getEfficacySummary() {
+        return efficacySummary;
+    }
+
+    public void setEfficacySummary(String efficacySummary) {
+        this.efficacySummary = efficacySummary;
+    }
+
+    public String getResponseWarning() {
+        return responseWarning;
+    }
+
+    public void setResponseWarning(String responseWarning) {
+        this.responseWarning = responseWarning;
+    }
+
+    public String getAlternativeDrug() {
+        return alternativeDrug;
+    }
+
+    public void setAlternativeDrug(String alternativeDrug) {
+        this.alternativeDrug = alternativeDrug;
     }
 }
