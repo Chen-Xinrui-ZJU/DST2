@@ -59,7 +59,7 @@
                             type="text"
                             name="keyword"
                             value="${keyword}"
-                            placeholder="Search by label ID, source, summary, efficacy, warning, alternative drug or drug ID"
+                            placeholder="Search by label ID, source, summary, efficacy, warning, and alternative drug"
                             style="width: 520px; padding: 6px;"
                     />
                     <button type="submit">Search</button>
