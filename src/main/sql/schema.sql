@@ -208,7 +208,10 @@ create table drug_label
     raw text null,
     drug_id varchar(100) null,
     constraint drug_label_id_uindex
-        unique (id)
+        unique (id),
+    efficacy_summary TEXT,
+    response_warning TEXT,
+    alternative_drug TEXT
 );
 
 alter table drug_label

@@ -91,33 +91,56 @@ public class PharmGKBImporter {
         List<String> drugLabelsContent =
                 new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines().collect(toList());
 
-
         DrugLabelDao drugLabelDao = new DrugLabelDao();
 
-        drugLabelsContent.stream().forEach(line -> {
+        drugLabelsContent.forEach(line -> {
             Map x = gson.fromJson(line, Map.class);
-            log.info("Going to save label: {}", (String) x.get("id"));
             String labelId = (String) x.get("id");
-            String name = (String) x.get("id");
+            log.info("Processing label: {}", labelId);
+
+            // 提取 name（可能没有，用 id 代替）
+            String name = (String) x.get("name");
+            if (name == null) name = labelId;
             String objCls = (String) x.get("objCls");
-            boolean alternateDrugAvailable = (Boolean) x.get("alternateDrugAvailable");
-            boolean dosingInformation = (Boolean) x.get("dosingInformation");
+            boolean alternateDrugAvailable = x.get("alternateDrugAvailable") != null && (Boolean) x.get("alternateDrugAvailable");
+            boolean dosingInformation = x.get("dosingInformation") != null && (Boolean) x.get("dosingInformation");
+
             String prescribingMarkdown = "";
-            if (x.containsKey("prescribingMarkdown")) {
-                prescribingMarkdown = ((String) ((Map) x.get("prescribingMarkdown")).get("html"));
+            if (x.containsKey("prescribingMarkdown") && x.get("prescribingMarkdown") instanceof Map) {
+                prescribingMarkdown = (String) ((Map) x.get("prescribingMarkdown")).get("html");
+                if (prescribingMarkdown == null) prescribingMarkdown = "";
             }
             String source = (String) x.get("source");
-            String textMarkdown = ((String) ((Map) x.get("textMarkdown")).get("html"));
-            String summaryMarkdown = ((String) ((Map) x.get("summaryMarkdown")).get("html"));
+            String textMarkdown = "";
+            if (x.containsKey("textMarkdown") && x.get("textMarkdown") instanceof Map) {
+                textMarkdown = (String) ((Map) x.get("textMarkdown")).get("html");
+            }
+            String summaryMarkdown = "";
+            if (x.containsKey("summaryMarkdown") && x.get("summaryMarkdown") instanceof Map) {
+                summaryMarkdown = (String) ((Map) x.get("summaryMarkdown")).get("html");
+            }
             String raw = gson.toJson(x);
-            String drugId = ((String) ((List<Map>) x.get("relatedChemicals")).get(0).get("id"));
-            DrugLabel drugLabelBean = new DrugLabel(labelId, name, objCls, alternateDrugAvailable, dosingInformation
-                    , prescribingMarkdown, source, textMarkdown, summaryMarkdown, raw, drugId);
-            if (!drugLabelDao.existsById(labelId)) {
-                drugLabelDao.saveDrugLabel(drugLabelBean);
-                log.info("Saved: {}", labelId);
+            String drugId = null;
+            if (x.containsKey("relatedChemicals") && x.get("relatedChemicals") instanceof List && !((List) x.get("relatedChemicals")).isEmpty()) {
+                drugId = (String) ((Map) ((List) x.get("relatedChemicals")).get(0)).get("id");
+            }
+
+            // 提取新字段（爬虫增强版生成）
+            String efficacySummary = (String) x.get("efficacy_summary");
+            String responseWarning = (String) x.get("response_warning");
+            String alternativeDrug = (String) x.get("alternative_drug");
+
+            DrugLabel drugLabelBean = new DrugLabel(labelId, name, objCls, alternateDrugAvailable, dosingInformation,
+                    prescribingMarkdown, source, textMarkdown, summaryMarkdown, raw, drugId,
+                    efficacySummary, responseWarning, alternativeDrug);
+
+            if (drugLabelDao.existsById(labelId)) {
+                // 存在则只更新三个新字段
+                drugLabelDao.updateNewFields(drugLabelBean);
+                log.info("Updated new fields for label: {}", labelId);
             } else {
-                log.info("Label {} already exist, skip", labelId);
+                drugLabelDao.saveDrugLabel(drugLabelBean);
+                log.info("Inserted label: {}", labelId);
             }
         });
     }
