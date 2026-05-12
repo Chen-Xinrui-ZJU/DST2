@@ -6,6 +6,7 @@ import cn.edu.zju.controller.MatchingController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -32,14 +33,11 @@ public class DispatchServlet extends HttpServlet {
     };
 
     public class Dispatcher {
-
-        public void registerGetMapping(String path,
-                                       HttpConsumer<HttpServletRequest, HttpServletResponse> consumer) {
+        public void registerGetMapping(String path, HttpConsumer<HttpServletRequest, HttpServletResponse> consumer) {
             getRequestMapping.put(path, consumer);
         }
 
-        public void registerPostMapping(String path,
-                                        HttpConsumer<HttpServletRequest, HttpServletResponse> consumer) {
+        public void registerPostMapping(String path, HttpConsumer<HttpServletRequest, HttpServletResponse> consumer) {
             postRequestMapping.put(path, consumer);
         }
     }
@@ -68,14 +66,30 @@ public class DispatchServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         String path = getRequestPath(req);
         log.info("{}: {}", req.getMethod(), path);
+
+        /*
+         * Static resources should not be handled by our custom dispatcher.
+         * Otherwise Bootstrap/app.css/js files may become unavailable,
+         * and the page will become unstyled.
+         */
+        if (path.startsWith("/static/")) {
+            RequestDispatcher defaultDispatcher = getServletContext().getNamedDispatcher("default");
+            if (defaultDispatcher != null) {
+                defaultDispatcher.forward(req, resp);
+                return;
+            }
+        }
+
         super.service(req, resp);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         String path = getRequestPath(req);
         HttpConsumer<HttpServletRequest, HttpServletResponse> consumer =
                 getRequestMapping.getOrDefault(path, notFound);
@@ -91,6 +105,7 @@ public class DispatchServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         String path = getRequestPath(req);
         HttpConsumer<HttpServletRequest, HttpServletResponse> consumer =
                 postRequestMapping.getOrDefault(path, notFound);
