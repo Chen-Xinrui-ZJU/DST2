@@ -11,6 +11,7 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -28,7 +29,7 @@
         }
 
         .drug-label-table {
-            min-width: 1900px;
+            min-width: 2050px;
             table-layout: auto;
         }
 
@@ -54,6 +55,11 @@
             text-align: left;
         }
 
+        .favorite-col {
+            min-width: 140px;
+            text-align: center;
+        }
+
         .search-card {
             background: #f8f9fa;
             border: 1px solid #e5e5e5;
@@ -69,10 +75,12 @@
 </head>
 
 <body>
+
 <jsp:include page="head.jsp" />
 
 <div class="container-fluid">
     <div class="row">
+
         <jsp:include page="nav.jsp">
             <jsp:param name="active" value="drug_labels" />
         </jsp:include>
@@ -86,7 +94,6 @@
             <div class="search-card">
                 <form method="get" action="<%=request.getContextPath()%>/drugLabels">
                     <div class="form-row align-items-center">
-
                         <div class="col-md-3 mb-2">
                             <select class="form-control" name="filter">
                                 <option value="all" ${filter == 'all' ? 'selected' : ''}>All fields</option>
@@ -142,6 +149,7 @@
                         <th class="summary-col">Efficacy Summary</th>
                         <th class="warning-col">Response Warning</th>
                         <th class="alternative-col">Alternative Drug</th>
+                        <th class="favorite-col">Favorite</th>
                     </tr>
                     </thead>
 
@@ -149,7 +157,7 @@
                     <c:choose>
                         <c:when test="${empty drugLabels}">
                             <tr>
-                                <td colspan="7" class="text-center empty-text">
+                                <td colspan="8" class="text-center empty-text">
                                     No drug labels found.
                                 </td>
                             </tr>
@@ -164,15 +172,32 @@
                                     <td class="summary-col">${item.summaryMarkdown}</td>
                                     <td class="summary-col">${item.efficacySummary}</td>
                                     <td class="warning-col">${item.responseWarning}</td>
-                                    <td class="alternative-col">
-                                        <c:choose>
-                                            <c:when test="${not empty item.alternativeDrug}">
-                                                ${item.alternativeDrug}
-                                            </c:when>
-                                            <c:otherwise>
-                                                -
-                                            </c:otherwise>
-                                        </c:choose>
+                                    <td class="alternative-col">${item.alternativeDrug}</td>
+                                    <td class="favorite-col">
+                                        <form method="post"
+                                              action="<%=request.getContextPath()%>/favorites"
+                                              style="display:inline;">
+                                            <input type="hidden" name="resourceType" value="drug_label">
+                                            <input type="hidden" name="resourceId" value="${item.id}">
+                                            <input type="hidden" name="keyword" value="${keyword}">
+                                            <input type="hidden" name="filter" value="${filter}">
+
+                                            <c:choose>
+                                                <c:when test="${item.favorited}">
+                                                    <input type="hidden" name="action" value="remove">
+                                                    <button type="submit" class="btn btn-sm btn-warning">
+                                                        Unfavorite
+                                                    </button>
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    <input type="hidden" name="action" value="add">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                        Favorite
+                                                    </button>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </form>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -181,8 +206,10 @@
                     </tbody>
                 </table>
             </div>
+
         </main>
     </div>
 </div>
+
 </body>
 </html>

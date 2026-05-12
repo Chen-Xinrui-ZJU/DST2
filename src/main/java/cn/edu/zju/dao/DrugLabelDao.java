@@ -2,6 +2,7 @@ package cn.edu.zju.dao;
 
 import cn.edu.zju.bean.DrugLabel;
 import cn.edu.zju.dbutils.DBUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +10,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DrugLabelDao extends BaseDao {
 
@@ -72,7 +75,6 @@ public class DrugLabelDao extends BaseDao {
                 preparedStatement.setString(4, id);
 
                 preparedStatement.executeUpdate();
-
             } catch (SQLException e) {
                 log.info("", e);
             }
@@ -80,6 +82,10 @@ public class DrugLabelDao extends BaseDao {
     }
 
     public List<DrugLabel> findAll() {
+        return findAllWithFavoriteIds(new HashSet<>());
+    }
+
+    public List<DrugLabel> findAllWithFavoriteIds(Set<String> favoriteIds) {
         List<DrugLabel> drugLabels = new ArrayList<>();
 
         DBUtils.execSQL(connection -> {
@@ -92,9 +98,9 @@ public class DrugLabelDao extends BaseDao {
 
                 while (resultSet.next()) {
                     DrugLabel drugLabel = buildDrugLabel(resultSet);
+                    drugLabel.setFavorited(favoriteIds != null && favoriteIds.contains(drugLabel.getId()));
                     drugLabels.add(drugLabel);
                 }
-
             } catch (SQLException e) {
                 log.info("", e);
             }
@@ -108,12 +114,17 @@ public class DrugLabelDao extends BaseDao {
     }
 
     public List<DrugLabel> findByKeywordWithFilter(String keyword, String filter) {
+        return findByKeywordWithFilterAndFavoriteIds(keyword, filter, new HashSet<>());
+    }
+
+    public List<DrugLabel> findByKeywordWithFilterAndFavoriteIds(String keyword,
+                                                                 String filter,
+                                                                 Set<String> favoriteIds) {
         List<DrugLabel> drugLabels = new ArrayList<>();
 
         DBUtils.execSQL(connection -> {
             try {
                 boolean searchAll = filter == null || filter.trim().isEmpty() || "all".equals(filter);
-
                 String wherePart;
 
                 if ("id".equals(filter)) {
@@ -136,21 +147,20 @@ public class DrugLabelDao extends BaseDao {
                     wherePart = " where alternative_drug like ?";
                 } else {
                     searchAll = true;
-                    wherePart =
-                            " where id like ? " +
-                                    "or name like ? " +
-                                    "or obj_cls like ? " +
-                                    "or cast(alternate_drug_available as char) like ? " +
-                                    "or cast(dosing_information as char) like ? " +
-                                    "or prescribing_markdown like ? " +
-                                    "or source like ? " +
-                                    "or text_markdown like ? " +
-                                    "or summary_markdown like ? " +
-                                    "or raw like ? " +
-                                    "or drug_id like ? " +
-                                    "or efficacy_summary like ? " +
-                                    "or response_warning like ? " +
-                                    "or alternative_drug like ?";
+                    wherePart = " where id like ? " +
+                            "or name like ? " +
+                            "or obj_cls like ? " +
+                            "or cast(alternate_drug_available as char) like ? " +
+                            "or cast(dosing_information as char) like ? " +
+                            "or prescribing_markdown like ? " +
+                            "or source like ? " +
+                            "or text_markdown like ? " +
+                            "or summary_markdown like ? " +
+                            "or raw like ? " +
+                            "or drug_id like ? " +
+                            "or efficacy_summary like ? " +
+                            "or response_warning like ? " +
+                            "or alternative_drug like ?";
                 }
 
                 PreparedStatement preparedStatement = connection.prepareStatement(
@@ -171,9 +181,40 @@ public class DrugLabelDao extends BaseDao {
 
                 while (resultSet.next()) {
                     DrugLabel drugLabel = buildDrugLabel(resultSet);
+                    drugLabel.setFavorited(favoriteIds != null && favoriteIds.contains(drugLabel.getId()));
                     drugLabels.add(drugLabel);
                 }
+            } catch (SQLException e) {
+                log.info("", e);
+            }
+        });
 
+        return drugLabels;
+    }
+
+    public List<DrugLabel> findFavoriteDrugLabels(String userId) {
+        List<DrugLabel> drugLabels = new ArrayList<>();
+
+        DBUtils.execSQL(connection -> {
+            try {
+                PreparedStatement preparedStatement = connection.prepareStatement(
+                        getSelectSql("dl") +
+                                " from drug_label dl " +
+                                "inner join favorites f on dl.id = f.resource_id " +
+                                "where f.user_id = ? and f.resource_type = ? " +
+                                "order by f.created_at desc"
+                );
+
+                preparedStatement.setString(1, userId);
+                preparedStatement.setString(2, "drug_label");
+
+                ResultSet resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) {
+                    DrugLabel drugLabel = buildDrugLabel(resultSet);
+                    drugLabel.setFavorited(true);
+                    drugLabels.add(drugLabel);
+                }
             } catch (SQLException e) {
                 log.info("", e);
             }
@@ -183,9 +224,30 @@ public class DrugLabelDao extends BaseDao {
     }
 
     private String getSelectSql() {
-        return "select id, name, obj_cls, alternate_drug_available, dosing_information, " +
-                "prescribing_markdown, source, text_markdown, summary_markdown, raw, drug_id, " +
-                "efficacy_summary, response_warning, alternative_drug";
+        return getSelectSql(null);
+    }
+
+    private String getSelectSql(String alias) {
+        String prefix = "";
+        if (alias != null && !alias.trim().isEmpty()) {
+            prefix = alias + ".";
+        }
+
+        return "select " +
+                prefix + "id, " +
+                prefix + "name, " +
+                prefix + "obj_cls, " +
+                prefix + "alternate_drug_available, " +
+                prefix + "dosing_information, " +
+                prefix + "prescribing_markdown, " +
+                prefix + "source, " +
+                prefix + "text_markdown, " +
+                prefix + "summary_markdown, " +
+                prefix + "raw, " +
+                prefix + "drug_id, " +
+                prefix + "efficacy_summary, " +
+                prefix + "response_warning, " +
+                prefix + "alternative_drug";
     }
 
     private DrugLabel buildDrugLabel(ResultSet resultSet) throws SQLException {
@@ -226,6 +288,7 @@ public class DrugLabelDao extends BaseDao {
         if (value == null || value.trim().isEmpty()) {
             return "";
         }
+
         return value.trim();
     }
 }

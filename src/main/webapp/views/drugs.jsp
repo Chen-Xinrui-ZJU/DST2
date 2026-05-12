@@ -11,6 +11,7 @@
 
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -47,10 +48,12 @@
 </head>
 
 <body>
+
 <jsp:include page="head.jsp" />
 
 <div class="container-fluid">
     <div class="row">
+
         <jsp:include page="nav.jsp">
             <jsp:param name="active" value="drugs" />
         </jsp:include>
@@ -64,7 +67,6 @@
             <div class="search-card">
                 <form method="get" action="<%=request.getContextPath()%>/drugs">
                     <div class="form-row align-items-center">
-
                         <div class="col-md-3 mb-2">
                             <select class="form-control" name="filter">
                                 <option value="all" ${filter == 'all' ? 'selected' : ''}>All fields</option>
@@ -142,10 +144,10 @@
                                         <form method="post"
                                               action="<%=request.getContextPath()%>/favorites"
                                               style="display:inline;">
-                                            <input type="hidden" name="drugId" value="${item.id}">
+                                            <input type="hidden" name="resourceType" value="drug">
+                                            <input type="hidden" name="resourceId" value="${item.id}">
                                             <input type="hidden" name="keyword" value="${keyword}">
                                             <input type="hidden" name="filter" value="${filter}">
-                                            <input type="hidden" name="redirect" value="drugs">
 
                                             <c:choose>
                                                 <c:when test="${item.favorited}">
@@ -175,5 +177,6 @@
         </main>
     </div>
 </div>
+
 </body>
 </html>

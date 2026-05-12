@@ -17,6 +17,7 @@ public class DrugLabel {
     private String efficacySummary;
     private String responseWarning;
     private String alternativeDrug;
+    private boolean favorited;
 
     public DrugLabel() {
     }
@@ -177,5 +178,13 @@ public class DrugLabel {
 
     public void setAlternativeDrug(String alternativeDrug) {
         this.alternativeDrug = alternativeDrug;
+    }
+
+    public boolean isFavorited() {
+        return favorited;
+    }
+
+    public void setFavorited(boolean favorited) {
+        this.favorited = favorited;
     }
 }
