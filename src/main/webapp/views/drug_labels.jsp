@@ -7,6 +7,7 @@
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page isELIgnored="false" %>
 
 <!doctype html>
@@ -14,7 +15,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Drug Labels</title>
 
     <link href="<%=request.getContextPath()%>/static/bootstrap/css/bootstrap.css" rel="stylesheet">
@@ -29,7 +30,7 @@
         }
 
         .drug-label-table {
-            min-width: 2050px;
+            min-width: 1900px;
             table-layout: auto;
         }
 
@@ -38,26 +39,34 @@
             vertical-align: top;
         }
 
+        .name-col {
+            min-width: 180px;
+            max-width: 260px;
+            white-space: normal;
+        }
+
+        .source-col {
+            min-width: 170px;
+            max-width: 240px;
+            white-space: normal;
+        }
+
         .summary-col {
             min-width: 320px;
-            max-width: 420px;
+            max-width: 440px;
+            white-space: normal;
         }
 
         .warning-col {
-            min-width: 380px;
+            min-width: 360px;
             max-width: 520px;
+            white-space: normal;
         }
 
         .alternative-col {
-            min-width: 320px;
+            min-width: 300px;
             max-width: 450px;
             white-space: normal;
-            text-align: left;
-        }
-
-        .favorite-col {
-            min-width: 140px;
-            text-align: center;
         }
 
         .search-card {
@@ -82,7 +91,7 @@
     <div class="row">
 
         <jsp:include page="nav.jsp">
-            <jsp:param name="active" value="drug_labels" />
+            <jsp:param name="active" value="drug_labels"/>
         </jsp:include>
 
         <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
@@ -94,6 +103,7 @@
             <div class="search-card">
                 <form method="get" action="<%=request.getContextPath()%>/drugLabels">
                     <div class="form-row align-items-center">
+
                         <div class="col-md-3 mb-2">
                             <select class="form-control" name="filter">
                                 <option value="all" ${filter == 'all' ? 'selected' : ''}>All fields</option>
@@ -132,7 +142,7 @@
 
                 <c:if test="${not empty keyword}">
                     <div class="mt-2 text-muted">
-                        Showing results for:
+                        Showing ${fn:length(drugLabels)} result(s) for:
                         <strong>${keyword}</strong>
                     </div>
                 </c:if>
@@ -143,13 +153,13 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Source</th>
+                        <th class="name-col">Name</th>
+                        <th class="source-col">Source</th>
                         <th>Dosing Information</th>
                         <th class="summary-col">Summary Markdown</th>
                         <th class="summary-col">Efficacy Summary</th>
                         <th class="warning-col">Response Warning</th>
                         <th class="alternative-col">Alternative Drug</th>
-                        <th class="favorite-col">Favorite</th>
                     </tr>
                     </thead>
 
@@ -167,38 +177,13 @@
                             <c:forEach items="${drugLabels}" var="item">
                                 <tr>
                                     <td>${item.id}</td>
-                                    <td>${item.source}</td>
+                                    <td class="name-col">${item.name}</td>
+                                    <td class="source-col">${item.source}</td>
                                     <td>${item.dosingInformation}</td>
                                     <td class="summary-col">${item.summaryMarkdown}</td>
                                     <td class="summary-col">${item.efficacySummary}</td>
                                     <td class="warning-col">${item.responseWarning}</td>
                                     <td class="alternative-col">${item.alternativeDrug}</td>
-                                    <td class="favorite-col">
-                                        <form method="post"
-                                              action="<%=request.getContextPath()%>/favorites"
-                                              style="display:inline;">
-                                            <input type="hidden" name="resourceType" value="drug_label">
-                                            <input type="hidden" name="resourceId" value="${item.id}">
-                                            <input type="hidden" name="keyword" value="${keyword}">
-                                            <input type="hidden" name="filter" value="${filter}">
-
-                                            <c:choose>
-                                                <c:when test="${item.favorited}">
-                                                    <input type="hidden" name="action" value="remove">
-                                                    <button type="submit" class="btn btn-sm btn-warning">
-                                                        Unfavorite
-                                                    </button>
-                                                </c:when>
-
-                                                <c:otherwise>
-                                                    <input type="hidden" name="action" value="add">
-                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                                                        Favorite
-                                                    </button>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </form>
-                                    </td>
                                 </tr>
                             </c:forEach>
                         </c:otherwise>

@@ -81,12 +81,12 @@ public class DrugLabelDao extends BaseDao {
         });
     }
 
-    public List<DrugLabel> findAll() {
-        return findAllWithFavoriteIds(new HashSet<>());
+    public List findAll() {
+        return findAllWithFavoriteIds(new HashSet());
     }
 
-    public List<DrugLabel> findAllWithFavoriteIds(Set<String> favoriteIds) {
-        List<DrugLabel> drugLabels = new ArrayList<>();
+    public List findAllWithFavoriteIds(Set favoriteIds) {
+        List drugLabels = new ArrayList<>();
 
         DBUtils.execSQL(connection -> {
             try {
@@ -109,68 +109,81 @@ public class DrugLabelDao extends BaseDao {
         return drugLabels;
     }
 
-    public List<DrugLabel> findByKeyword(String keyword) {
+    public List findByKeyword(String keyword) {
         return findByKeywordWithFilter(keyword, "all");
     }
 
-    public List<DrugLabel> findByKeywordWithFilter(String keyword, String filter) {
-        return findByKeywordWithFilterAndFavoriteIds(keyword, filter, new HashSet<>());
+    public List findByKeywordWithFilter(String keyword, String filter) {
+        return findByKeywordWithFilterAndFavoriteIds(keyword, filter, new HashSet());
     }
 
-    public List<DrugLabel> findByKeywordWithFilterAndFavoriteIds(String keyword,
-                                                                 String filter,
-                                                                 Set<String> favoriteIds) {
-        List<DrugLabel> drugLabels = new ArrayList<>();
+    public List findByKeywordWithFilterAndFavoriteIds(String keyword, String filter, Set favoriteIds) {
+        List drugLabels = new ArrayList<>();
+
+        final String safeKeyword;
+        if (keyword == null) {
+            safeKeyword = "";
+        } else {
+            safeKeyword = keyword.trim().toLowerCase();
+        }
+
+        final String safeFilter;
+        if (filter == null || filter.trim().isEmpty()) {
+            safeFilter = "all";
+        } else {
+            safeFilter = filter.trim();
+        }
 
         DBUtils.execSQL(connection -> {
             try {
-                boolean searchAll = filter == null || filter.trim().isEmpty() || "all".equals(filter);
+                boolean searchAll = "all".equals(safeFilter);
                 String wherePart;
 
-                if ("id".equals(filter)) {
-                    wherePart = " where id like ?";
-                } else if ("name".equals(filter)) {
-                    wherePart = " where name like ?";
-                } else if ("source".equals(filter)) {
-                    wherePart = " where source like ?";
-                } else if ("drug_id".equals(filter)) {
-                    wherePart = " where drug_id like ?";
-                } else if ("dosing_information".equals(filter)) {
-                    wherePart = " where cast(dosing_information as char) like ?";
-                } else if ("summary_markdown".equals(filter)) {
-                    wherePart = " where summary_markdown like ?";
-                } else if ("efficacy_summary".equals(filter)) {
-                    wherePart = " where efficacy_summary like ?";
-                } else if ("response_warning".equals(filter)) {
-                    wherePart = " where response_warning like ?";
-                } else if ("alternative_drug".equals(filter)) {
-                    wherePart = " where alternative_drug like ?";
+                if ("id".equals(safeFilter)) {
+                    wherePart = " where lower(id) like ?";
+                } else if ("name".equals(safeFilter)) {
+                    wherePart = " where lower(name) like ?";
+                } else if ("source".equals(safeFilter)) {
+                    wherePart = " where lower(source) like ?";
+                } else if ("drug_id".equals(safeFilter)) {
+                    wherePart = " where lower(drug_id) like ?";
+                } else if ("dosing_information".equals(safeFilter)) {
+                    wherePart = " where lower(cast(dosing_information as char)) like ?";
+                } else if ("summary_markdown".equals(safeFilter)) {
+                    wherePart = " where lower(summary_markdown) like ?";
+                } else if ("efficacy_summary".equals(safeFilter)) {
+                    wherePart = " where lower(efficacy_summary) like ?";
+                } else if ("response_warning".equals(safeFilter)) {
+                    wherePart = " where lower(response_warning) like ?";
+                } else if ("alternative_drug".equals(safeFilter)) {
+                    wherePart = " where lower(alternative_drug) like ?";
                 } else {
+                    /*
+                     * User-facing All fields search.
+                     * Only search visible or user-meaningful fields.
+                     * Hidden raw/text_markdown/prescribing_markdown are excluded,
+                     * because they may cause confusing matches that users cannot see.
+                     */
                     searchAll = true;
-                    wherePart = " where id like ? " +
-                            "or name like ? " +
-                            "or obj_cls like ? " +
-                            "or cast(alternate_drug_available as char) like ? " +
-                            "or cast(dosing_information as char) like ? " +
-                            "or prescribing_markdown like ? " +
-                            "or source like ? " +
-                            "or text_markdown like ? " +
-                            "or summary_markdown like ? " +
-                            "or raw like ? " +
-                            "or drug_id like ? " +
-                            "or efficacy_summary like ? " +
-                            "or response_warning like ? " +
-                            "or alternative_drug like ?";
+                    wherePart = " where lower(id) like ? " +
+                            "or lower(name) like ? " +
+                            "or lower(source) like ? " +
+                            "or lower(drug_id) like ? " +
+                            "or lower(cast(dosing_information as char)) like ? " +
+                            "or lower(summary_markdown) like ? " +
+                            "or lower(efficacy_summary) like ? " +
+                            "or lower(response_warning) like ? " +
+                            "or lower(alternative_drug) like ?";
                 }
 
                 PreparedStatement preparedStatement = connection.prepareStatement(
                         getSelectSql() + " from drug_label " + wherePart
                 );
 
-                String likeKeyword = "%" + keyword + "%";
+                String likeKeyword = "%" + safeKeyword + "%";
 
                 if (searchAll) {
-                    for (int i = 1; i <= 14; i++) {
+                    for (int i = 1; i <= 9; i++) {
                         preparedStatement.setString(i, likeKeyword);
                     }
                 } else {
@@ -185,15 +198,15 @@ public class DrugLabelDao extends BaseDao {
                     drugLabels.add(drugLabel);
                 }
             } catch (SQLException e) {
-                log.info("", e);
+                log.info("Drug label search failed.", e);
             }
         });
 
         return drugLabels;
     }
 
-    public List<DrugLabel> findFavoriteDrugLabels(String userId) {
-        List<DrugLabel> drugLabels = new ArrayList<>();
+    public List findFavoriteDrugLabels(String userId) {
+        List drugLabels = new ArrayList<>();
 
         DBUtils.execSQL(connection -> {
             try {
@@ -202,7 +215,7 @@ public class DrugLabelDao extends BaseDao {
                                 " from drug_label dl " +
                                 "inner join favorites f on dl.id = f.resource_id " +
                                 "where f.user_id = ? and f.resource_type = ? " +
-                                "order by f.created_at desc"
+                                "order by dl.id"
                 );
 
                 preparedStatement.setString(1, userId);
