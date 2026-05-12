@@ -30,7 +30,7 @@
         }
 
         .drug-label-table {
-            min-width: 1900px;
+            min-width: 2050px;
             table-layout: auto;
         }
 
@@ -69,6 +69,11 @@
             white-space: normal;
         }
 
+        .favorite-col {
+            min-width: 140px;
+            text-align: center;
+        }
+
         .search-card {
             background: #f8f9fa;
             border: 1px solid #e5e5e5;
@@ -79,6 +84,12 @@
 
         .empty-text {
             color: #888;
+        }
+
+        .debug-box {
+            color: red;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -98,6 +109,10 @@
 
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h2>Drug Labels</h2>
+            </div>
+
+            <div class="debug-box">
+                ${debugSearchInfo}
             </div>
 
             <div class="search-card">
@@ -160,6 +175,7 @@
                         <th class="summary-col">Efficacy Summary</th>
                         <th class="warning-col">Response Warning</th>
                         <th class="alternative-col">Alternative Drug</th>
+                        <th class="favorite-col">Favorite</th>
                     </tr>
                     </thead>
 
@@ -167,7 +183,7 @@
                     <c:choose>
                         <c:when test="${empty drugLabels}">
                             <tr>
-                                <td colspan="8" class="text-center empty-text">
+                                <td colspan="9" class="text-center empty-text">
                                     No drug labels found.
                                 </td>
                             </tr>
@@ -184,6 +200,33 @@
                                     <td class="summary-col">${item.efficacySummary}</td>
                                     <td class="warning-col">${item.responseWarning}</td>
                                     <td class="alternative-col">${item.alternativeDrug}</td>
+
+                                    <td class="favorite-col">
+                                        <form method="post"
+                                              action="<%=request.getContextPath()%>/favorites"
+                                              style="display:inline;">
+                                            <input type="hidden" name="resourceType" value="drug_label">
+                                            <input type="hidden" name="resourceId" value="${item.id}">
+                                            <input type="hidden" name="keyword" value="${keyword}">
+                                            <input type="hidden" name="filter" value="${filter}">
+
+                                            <c:choose>
+                                                <c:when test="${item.favorited}">
+                                                    <input type="hidden" name="action" value="remove">
+                                                    <button type="submit" class="btn btn-sm btn-warning">
+                                                        Unfavorite
+                                                    </button>
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    <input type="hidden" name="action" value="add">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                        Favorite
+                                                    </button>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </form>
+                                    </td>
                                 </tr>
                             </c:forEach>
                         </c:otherwise>

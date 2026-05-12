@@ -49,9 +49,9 @@ public class KnowledgeBaseController {
         }
 
         String userId = getCurrentUserId(request);
-        Set<String> favoriteIds = favoriteDao.findFavoriteResourceIds(userId, "drug");
+        Set favoriteIds = favoriteDao.findFavoriteResourceIds(userId, "drug");
 
-        List<Drug> drugs;
+        List drugs;
 
         if (isBlank(keyword)) {
             drugs = drugDao.findAllWithFavoriteIds(favoriteIds);
@@ -64,6 +64,7 @@ public class KnowledgeBaseController {
 
         request.setAttribute("filter", filter);
         request.setAttribute("drugs", drugs);
+
         request.getRequestDispatcher("/views/drugs.jsp").forward(request, response);
     }
 
@@ -78,9 +79,9 @@ public class KnowledgeBaseController {
         }
 
         String userId = getCurrentUserId(request);
-        Set<String> favoriteIds = favoriteDao.findFavoriteResourceIds(userId, "drug_label");
+        Set favoriteIds = favoriteDao.findFavoriteResourceIds(userId, "drug_label");
 
-        List<DrugLabel> drugLabels;
+        List drugLabels;
 
         if (isBlank(keyword)) {
             drugLabels = drugLabelDao.findAllWithFavoriteIds(favoriteIds);
@@ -93,6 +94,20 @@ public class KnowledgeBaseController {
 
         request.setAttribute("filter", filter);
         request.setAttribute("drugLabels", drugLabels);
+
+        /*
+         * Temporary debug information.
+         * Use this to check whether the controller enters the search branch
+         * and how many records are returned by the DAO.
+         * You can remove this after confirming that search works.
+         */
+        request.setAttribute(
+                "debugSearchInfo",
+                "DEBUG: keyword=" + keyword +
+                        ", filter=" + filter +
+                        ", resultCount=" + drugLabels.size()
+        );
+
         request.getRequestDispatcher("/views/drug_labels.jsp").forward(request, response);
     }
 
@@ -109,8 +124,8 @@ public class KnowledgeBaseController {
 
         String userId = getCurrentUserId(request);
 
-        List<Drug> favoriteDrugs = drugDao.findFavoriteDrugs(userId);
-        List<DrugLabel> favoriteDrugLabels = drugLabelDao.findFavoriteDrugLabels(userId);
+        List favoriteDrugs = drugDao.findFavoriteDrugs(userId);
+        List favoriteDrugLabels = drugLabelDao.findFavoriteDrugLabels(userId);
 
         request.setAttribute("favoriteDrugs", favoriteDrugs);
         request.setAttribute("favoriteDrugLabels", favoriteDrugLabels);
@@ -127,8 +142,8 @@ public class KnowledgeBaseController {
         String resourceId = request.getParameter("resourceId");
 
         /*
-         * Compatibility with the old Drugs page.
-         * The old form used drugId instead of resourceId.
+         * Backward compatibility:
+         * the old Drugs favorite form used drugId instead of resourceId.
          */
         String oldDrugId = request.getParameter("drugId");
         if (isBlank(resourceId) && !isBlank(oldDrugId)) {
@@ -162,7 +177,13 @@ public class KnowledgeBaseController {
             return;
         }
 
-        String targetPage = "drug_label".equals(resourceType) ? "/drugLabels" : "/drugs";
+        String targetPage;
+        if ("drug_label".equals(resourceType)) {
+            targetPage = "/drugLabels";
+        } else {
+            targetPage = "/drugs";
+        }
+
         StringBuilder redirectUrl = new StringBuilder(request.getContextPath() + targetPage);
 
         if (!isBlank(keyword)) {
